@@ -1,0 +1,16 @@
+# Build context is this deploy/ folder itself.
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+Dockerfile
+.dockerignore
+
+# Reference-only copy of the strategy contract, kept here so this folder
+# is self-contained to read/develop against. NOT shipped into the image —
+# the real `interfaces` module comes from the installed `infrastructure`
+# package (see pyproject.toml). Copying this in too would shadow it on
+# sys.path, silently defeating the pinned dependency.
+interfaces

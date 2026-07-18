@@ -1,0 +1,29 @@
+[project]
+name = "strategy-deploy"
+version = "0.1.0"
+description = "Packages a strategy from ../strategies into a deployable image"
+requires-python = ">=3.11"
+dependencies = [
+    # Pinned to a commit SHA, not a branch, so a build today and a build in
+    # six months install the exact same engine/guard/runner code. Bumping
+    # this is a deliberate, reviewed act — not something needed to iterate
+    # on strategy logic.
+    #
+    # This SHA is the tip of feature/containerization (pushed to origin,
+    # not yet merged to main) — it's what actually has the centralized
+    # StrategyGuardRegistry and the lean dependency list. `main` at the
+    # time this was written (fa2ef762a1c30745d9a7d1b5beba038355d7e433) is
+    # stale: no guard_registry.py, and fastapi[standard]/uvicorn/etc. as a
+    # base dependency instead of an optional extra — pinning to it pulls in
+    # ~20 unnecessary packages for a strategy image. Re-pin to whatever
+    # main's HEAD is once this branch actually merges.
+    "infrastructure @ git+https://github.com/ETH-Quant-Research-Group/Infrastructure.git@23052459f55e03b80b19c6eb412a3703cafe1599",
+]
+
+[tool.uv.sources]
+# Infrastructure's own pyproject.toml pins lighter-sdk to this git fork via
+# the same mechanism. That pin does NOT propagate through the built wheel's
+# metadata, so it has to be repeated here or uv will happily resolve
+# lighter-sdk==1.1.2 from PyPI instead — which may not match what
+# Infrastructure was actually built and tested against.
+lighter-sdk = { git = "https://github.com/elliottech/lighter-python.git" }

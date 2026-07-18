@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store
+
+# Research datasets are local, not committed — keep the folder in git via .gitkeep
+data/*
+!data/.gitkeep

@@ -1,0 +1,16 @@
+[project]
+name = "strategy-research"
+version = "0.1.0"
+description = "Research and development workspace for new trading strategies"
+requires-python = ">=3.11"
+dependencies = [
+    # Deliberately lightweight — no dependency on the `infrastructure`
+    # package here. Strategy code only needs interfaces/ (vendored, zero
+    # deps), so research/backtesting stays fast to set up. The real
+    # infrastructure package is only installed inside deploy/, when a
+    # strategy is actually being packaged to run for real.
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "matplotlib>=3.9",
+    "jupyter>=1.0",
+]
