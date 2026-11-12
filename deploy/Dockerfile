@@ -6,16 +6,17 @@
 #
 #   cd deploy
 #   docker buildx build \
-#     --platform linux/amd64,linux/arm64 \
+#     --platform linux/arm64 \
 #     --build-arg STRATEGY_NAME=ExampleStrategy \
 #     -t ghcr.io/eth-quant-research-group/<image-name>:latest \
 #     --push .
 #
-# Always use buildx with an explicit --platform, never plain `docker build`
-# — a plain build only targets whatever architecture you're building ON,
-# which silently produces an arm64-only image on Apple Silicon that then
-# fails with "exec format error" on an amd64 deploy host. --push is
-# required for multi-platform builds; they can't be --load-ed locally.
+# The default target is linux/arm64. Always pass an explicit --platform
+# rather than relying on plain `docker build`, which only targets the
+# architecture you're building ON (e.g. amd64 on an Intel/AMD machine) and
+# would fail with "exec format error" on the arm64 deploy host. For a quick
+# local-only test, swap --push for --load. If amd64 is ever needed too, use
+# --platform linux/arm64,linux/amd64 (multi-platform builds require --push).
 #
 # This is a manual, deliberate action — nothing in this repo auto-builds
 # or auto-pushes on a git push.

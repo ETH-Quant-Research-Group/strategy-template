@@ -77,18 +77,19 @@ its own copy of `interfaces/` (reference only — see below), and a
    ```
    cd deploy
    docker buildx build \
-     --platform linux/amd64,linux/arm64 \
+     --platform linux/arm64 \
      --build-arg STRATEGY_NAME=MyStrategy \
      -t ghcr.io/eth-quant-research-group/<image-name>:latest \
      --push .
    ```
 
-   Always use buildx with an explicit `--platform`, never plain `docker
-   build` — on Apple Silicon it silently produces an arm64-only image that
-   fails with "exec format error" on the amd64 deploy host. `--push` is
-   required for a multi-platform build (they can't be `--load`-ed); for a
-   quick local-only test, use a single `--platform linux/amd64` and
-   `--load` instead of `--push`.
+   The default target is `linux/arm64`. Always pass an explicit
+   `--platform` rather than relying on plain `docker build`, which only
+   targets the architecture you're building on (e.g. amd64 on an Intel/AMD
+   machine) and would fail with "exec format error" on the arm64 deploy
+   host. For a quick local-only test, swap `--push` for `--load`. If you
+   ever need amd64 too, use `--platform linux/arm64,linux/amd64` — multi-
+   platform builds require `--push` (they can't be `--load`-ed).
 
    This is a manual step — nothing here builds or pushes automatically on
    a git push.
