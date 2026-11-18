@@ -55,22 +55,9 @@ its own copy of `interfaces/` (reference only — see below), and a
    ...` in the example above already resolves to the real one once
    installed, whether locally (via `uv sync`) or in the built image.
 
-   ```python
-   from decimal import Decimal
-   from interfaces.strategy import BaseStrategy
-   from interfaces.signals import TargetPosition
+   **Show what matters for your strategy on the site** by overriding
+   `metrics()` — see [Strategy metrics](#strategy-metrics) below.
 
-   class MyStrategy(BaseStrategy):
-       topics = ["futures.BTCUSDT.bars.1m"]
-       max_loss = Decimal("500")  # cosmetic default — real limit is set at deploy time
-
-       def on_bar(self, bar):
-           ...
-           return TargetPosition(symbol="BTCUSDT", quantity=Decimal("0.001"))
-   ```
-
-   Drop any model weights or other assets it needs directly in `deploy/`
-   too — everything there ships into the image.
 
 2. **Build the image from inside `deploy/`:**
 
@@ -111,3 +98,47 @@ tracks realized PnL per `STRATEGY_ID` from its own fills and drops signals
 from any strategy that's breached the limit the admin set on the Deploy
 page — regardless of what your container does. You don't need to
 implement a guard yourself.
+
+## Strategy metrics
+
+Every strategy's page on the site shows the same core numbers: PnL,
+drawdown, exposure, positions, fills. What else matters depends on the
+strategy — a momentum strategy's signal strength and hit rate, a carry
+trade's funding APR, a pairs trade's spread z-score, a stock strategy's
+regime — so your strategy reports those itself by overriding `metrics()`:
+
+```python
+from interfaces.metrics import Metric
+
+class MyStrategy(BaseStrategy):
+    ...
+
+    def metrics(self) -> list[Metric]:
+        return [
+            Metric("Signal", self._z, hint="z-score of the 20-bar return"),
+            Metric("Hit rate", self._wins / max(self._trades, 1), fmt="percent"),
+            Metric("Avg holding", self._avg_hold_seconds, fmt="duration"),
+            Metric("Regime", "risk-on" if self._risk_on else "risk-off", fmt="text"),
+        ]
+```
+
+They appear in a "Strategy Metrics" section on its page, in the order you
+return them, and update live (the worker sends them every ~8 seconds with
+the strategy's heartbeat). No change to the site is needed.
+
+| `fmt` | pass | shown as |
+| --- | --- | --- |
+| `number` (default) | any number | `1.25` |
+| `percent` | a fraction | `0.0523` → `5.23%` |
+| `usd` | dollars | `-$1,234.50` |
+| `bps` | basis points | `12.5 bps` |
+| `duration` | seconds | `3h 20m` |
+| `text` | a short string | `LONG` |
+
+`value=None` shows "—" (e.g. before the first bar); `decimals=` fixes the
+number of decimals; `hint=` adds a line of explanation under the value.
+
+Keep it cheap: it's called every few seconds, so return values your
+strategy already tracks — no heavy computation or network calls. If it
+raises, the error is logged and that round's metrics are skipped; it never
+stops your strategy. `deploy/strategies/strategy.py` has a working example.

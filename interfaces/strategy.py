@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, ClassVar
 
@@ -19,7 +20,10 @@ if TYPE_CHECKING:
     # (i.e. inside deploy/). In this repo's lightweight research
     # environment they're annotations only — harmless if unresolved.
     from data.types import AnyBar, FundingRate, Trade
+    from engine.clock import Clock
+    from engine.order.instruments import OrderSizing
     from execution.types import FillConfirmation
+    from interfaces.metrics import Metric
     from interfaces.signals import TargetPosition
 
 
@@ -37,11 +41,11 @@ class BaseStrategy(ABC):
         NATS subject strings, e.g. ``"futures.BTCUSDT.bars.1m"``.
 
     ``max_loss``
-        A local default only. Real enforcement lives centrally in the
-        consolidator's StrategyGuardRegistry, keyed by STRATEGY_ID and
-        configured from the admin's "Max drawdown" field on the /internal
-        Deploy page — this attribute is just what gets reported if that
-        field is left blank. See deploy/README section on risk limits.
+        Maximum cumulative loss (positive number) before the
+        :class:`~engine.guard.StrategyGuard` halts the strategy.
+
+    Override :meth:`metrics` to show the numbers that matter for this
+    strategy on its page on the site.
 
     Example::
 
@@ -57,12 +61,46 @@ class BaseStrategy(ABC):
     topics: ClassVar[list[str]] = []
     max_loss: ClassVar[Decimal] = Decimal("1000")
 
+    #: The exchanges' order-size rules for this strategy's symbols (lot
+    #: step, min / max quantity, min order value), set by the strategy worker
+    #: before :meth:`on_start` and kept up to date.  All in memory — reading
+    #: it never makes a network call.  ``None`` outside the worker (e.g. in
+    #: a backtest).  Example::
+    #:
+    #:     qty = self.order_sizing.round_qty("bybit_spot", "SOLUSDT", raw_qty)
+    #:     why_not = self.order_sizing.check("bybit_demo", "SOLUSDT", qty, price)
+    order_sizing: OrderSizing | None = None
+
+    #: Where :meth:`now` gets the time from — set by the backtest to its
+    #: simulated clock.  ``None`` = the real time.
+    clock: Clock | None = None
+
+    def now(self) -> datetime:
+        """The current time (UTC) — the simulated time in a backtest.
+
+        Use this instead of ``datetime.now()``, so the strategy behaves the
+        same in a backtest as live.
+        """
+        return self.clock.now() if self.clock is not None else datetime.now(UTC)
+
     def on_start(self) -> None:  # noqa: B027
         """Called once before the strategy begins receiving bars."""
 
+    def on_history_bar(self, bar: AnyBar) -> None:  # noqa: B027
+        """Called once per past bar at start-up, oldest first — after
+        :meth:`on_start`, before the first live :meth:`on_bar`.
+
+        For warming up indicators (rolling volatility, moving averages, …).
+        It cannot trade: there is no return value, and anything returned is
+        ignored.  The history covers the strategy's bar topics (the last 60
+        finished bars of each); a strategy that doesn't override this simply
+        starts without it.
+        """
+
     @abstractmethod
     def on_bar(self, bar: AnyBar) -> TargetPosition | None:
-        """Called for each new bar, whether live or historical."""
+        """Called for each new **live** bar.  Past bars from start-up go to
+        :meth:`on_history_bar` instead, never here."""
 
     def on_trade(self, trade: Trade) -> TargetPosition | None:  # noqa: B027
         """Called for each individual trade tick (optional override)."""
@@ -83,3 +121,23 @@ class BaseStrategy(ABC):
 
     def on_stop(self) -> None:  # noqa: B027
         """Called once after the strategy stops receiving bars."""
+
+    def metrics(self) -> list[Metric]:
+        """The numbers that matter for this strategy, shown on its page on
+        the site next to the PnL, drawdown and exposure every strategy gets.
+
+        Called every few seconds while the strategy runs — keep it cheap:
+        return values you already track, don't compute anything heavy or
+        make network calls here. An exception is logged and the metrics are
+        skipped for that round; it never stops the strategy. Example::
+
+            def metrics(self) -> list[Metric]:
+                return [
+                    Metric("Signal", self._z, hint="z-score of the 20-bar return"),
+                    Metric("Hit rate", self._hit_rate, fmt="percent"),
+                    Metric("Position", "LONG" if self._long else "FLAT", fmt="text"),
+                ]
+
+        See :mod:`interfaces.metrics` for the formats.
+        """
+        return []
