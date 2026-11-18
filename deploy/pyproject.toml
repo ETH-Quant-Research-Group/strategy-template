@@ -9,12 +9,11 @@ dependencies = [
     # this is a deliberate, reviewed act — not something needed to iterate
     # on strategy logic.
     #
-    # This SHA is the first commit with interfaces/metrics.py
-    # (BaseStrategy.metrics(), which strategies/strategy.py uses), on
-    # Infrastructure PR #22. Re-pin to main's HEAD once that's merged.
-    # The pin must exist on GitHub: a SHA that was rebased away breaks
-    # every build here.
-    "infrastructure @ git+https://github.com/ETH-Quant-Research-Group/Infrastructure.git@3b04cc5d5c431d1ded8aa9f3cf6582dbd4d23310",
+    # This SHA is Infrastructure's main after PR #22, the first with
+    # interfaces/metrics.py (BaseStrategy.metrics(), which
+    # strategies/strategy.py uses). Pin to commits on main: a SHA that only
+    # lived on a branch can be rebased away, and that breaks every build here.
+    "infrastructure @ git+https://github.com/ETH-Quant-Research-Group/Infrastructure.git@82140bc96893180c36d018b26ece6de4e6e279ef",
 ]
 
 [tool.uv.sources]
