@@ -808,7 +808,7 @@ wheels = [
 [[package]]
 name = "infrastructure"
 version = "0.1.0"
-source = { git = "https://github.com/ETH-Quant-Research-Group/Infrastructure.git?rev=23052459f55e03b80b19c6eb412a3703cafe1599#23052459f55e03b80b19c6eb412a3703cafe1599" }
+source = { git = "https://github.com/ETH-Quant-Research-Group/Infrastructure.git?rev=3b04cc5d5c431d1ded8aa9f3cf6582dbd4d23310#3b04cc5d5c431d1ded8aa9f3cf6582dbd4d23310" }
 dependencies = [
     { name = "httpx" },
     { name = "lighter-sdk" },
@@ -1389,7 +1389,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "infrastructure", git = "https://github.com/ETH-Quant-Research-Group/Infrastructure.git?rev=23052459f55e03b80b19c6eb412a3703cafe1599" }]
+requires-dist = [{ name = "infrastructure", git = "https://github.com/ETH-Quant-Research-Group/Infrastructure.git?rev=3b04cc5d5c431d1ded8aa9f3cf6582dbd4d23310" }]
 
 [[package]]
 name = "toolz"

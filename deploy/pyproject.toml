@@ -9,15 +9,12 @@ dependencies = [
     # this is a deliberate, reviewed act — not something needed to iterate
     # on strategy logic.
     #
-    # This SHA is the tip of feature/containerization (pushed to origin,
-    # not yet merged to main) — it's what actually has the centralized
-    # StrategyGuardRegistry and the lean dependency list. `main` at the
-    # time this was written (fa2ef762a1c30745d9a7d1b5beba038355d7e433) is
-    # stale: no guard_registry.py, and fastapi[standard]/uvicorn/etc. as a
-    # base dependency instead of an optional extra — pinning to it pulls in
-    # ~20 unnecessary packages for a strategy image. Re-pin to whatever
-    # main's HEAD is once this branch actually merges.
-    "infrastructure @ git+https://github.com/ETH-Quant-Research-Group/Infrastructure.git@23052459f55e03b80b19c6eb412a3703cafe1599",
+    # This SHA is the first commit with interfaces/metrics.py
+    # (BaseStrategy.metrics(), which strategies/strategy.py uses), on
+    # Infrastructure PR #22. Re-pin to main's HEAD once that's merged.
+    # The pin must exist on GitHub: a SHA that was rebased away breaks
+    # every build here.
+    "infrastructure @ git+https://github.com/ETH-Quant-Research-Group/Infrastructure.git@3b04cc5d5c431d1ded8aa9f3cf6582dbd4d23310",
 ]
 
 [tool.uv.sources]
